@@ -16,9 +16,14 @@ func NewApp(db *sql.DB) *fiber.App {
 		return service.CheckAlumniService(c, db)
 	})
 
-	app.Get("/alumni/all/:key", func(c *fiber.Ctx) error {
+	app.Get("/unair/alumni", func(c *fiber.Ctx) error {
 		return service.GetAllAlumniService(c, db)
 	})
+
+	app.Get("/unair/alumni/:id", func(c *fiber.Ctx) error {
+		return service.GetAlumniByIDService(c, db)
+	})
+	
 
 	return app
 }

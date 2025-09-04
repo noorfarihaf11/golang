@@ -39,4 +39,26 @@ func GetAllAlumni(db *sql.DB) ([]model.Alumni, error) {
     return alumniList, nil
 }
 
+func GetAlumniByID(db *sql.DB, id int) (*model.Alumni, error) {
+    row := db.QueryRow(`SELECT id, nim, nama, jurusan, angkatan, tahun_lulus, 
+        email, no_telepon, alamat, created_at, updated_at 
+        FROM alumni WHERE id=$1`, id)
+
+    var alumni model.Alumni
+    err := row.Scan(
+        &alumni.ID, &alumni.NIM, &alumni.Nama, &alumni.Jurusan, &alumni.Angkatan,
+        &alumni.TahunLulus, &alumni.Email, &alumni.NoTelp, &alumni.Alamat,
+        &alumni.CreatedAt, &alumni.UpdatedAt,
+    )
+    if err != nil {
+        if err == sql.ErrNoRows {
+            return nil, nil // data tidak ditemukan
+        }
+        return nil, err
+    }
+
+    return &alumni, nil
+}
+
+
 

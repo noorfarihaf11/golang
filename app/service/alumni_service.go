@@ -5,6 +5,7 @@ import (
     "os"
     "github.com/gofiber/fiber/v2"
     "github.com/noorfarihaf11/clean-arc/app/repository"
+    "strconv"
 )
 
 func CheckAlumniService(c *fiber.Ctx, db *sql.DB) error {
@@ -45,7 +46,7 @@ func CheckAlumniService(c *fiber.Ctx, db *sql.DB) error {
 }
 
 func GetAllAlumniService(c *fiber.Ctx, db *sql.DB) error {
-    key := c.Params("key")
+    key := c.Get("X-API-KEY") 
     if key != os.Getenv("API_KEY") {
         return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
             "message": "Key tidak valid",
@@ -68,3 +69,41 @@ func GetAllAlumniService(c *fiber.Ctx, db *sql.DB) error {
     })
 }
 
+func GetAlumniByIDService(c *fiber.Ctx, db *sql.DB) error {
+    key := c.Get("X-API-KEY") 
+    if key != os.Getenv("API_KEY") {
+        return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+            "message": "Key tidak valid",
+            "success": false,
+        })
+    }
+
+    id, err := strconv.Atoi(c.Params("id"))
+    if err != nil {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+            "message": "ID tidak valid",
+            "success": false,
+        })
+    }
+
+    alumni, err := repository.GetAlumniByID(db, id)
+    if err != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+            "message": "Error: " + err.Error(),
+            "success": false,
+        })
+    }
+
+    if alumni == nil {
+        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+            "message": "Alumni tidak ditemukan",
+            "success": false,
+        })
+    }
+
+    return c.Status(fiber.StatusOK).JSON(fiber.Map{
+        "message": "Berhasil mendapatkan data alumni",
+        "success": true,
+        "alumni": alumni,
+    })
+}
