@@ -9,44 +9,7 @@ import (
     "strconv"
 )
 
-func CheckAlumniService(c *fiber.Ctx, db *sql.DB) error {
-	key := c.Params("key")
-	if key != os.Getenv("API_KEY") {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"message": "Key	tidak	valid",
-			"success": false,
-		})
-	}
-	nim := c.FormValue("nim")
-	if nim == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "NIM	wajib	diisi",
-			"success": false,
-		})
-	}
-	alumni, err := repository.CheckAlumniByNim(db, nim)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return c.Status(fiber.StatusOK).JSON(fiber.Map{
-				"message":  "Mahasiswa	bukan	alumni",
-				"success":  true,
-				"isAlumni": false,
-			})
-		}
-		 return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-        "message": "Gagal cek alumni karena " + err.Error(),
-        "success": false,
-    })
-	}
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message":  "Berhasil	mendapatkan	data	alumni",
-		"success":  true,
-		"isAlumni": true,
-		"alumni":   alumni,
-	})
-}
-
-func GetAllAlumniService(c *fiber.Ctx, db *sql.DB) error {
+func GetAllJobService(c *fiber.Ctx, db *sql.DB) error {
     key := c.Get("X-API-KEY") 
     if key != os.Getenv("API_KEY") {
         return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -55,7 +18,7 @@ func GetAllAlumniService(c *fiber.Ctx, db *sql.DB) error {
         })
     }
 
-    alumniList, err := repository.GetAllAlumni(db)
+    PekerjaanList, err := repository.GetAllJobs(db)
     if err != nil {
         return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
             "message": "Error: " + err.Error(),
@@ -64,13 +27,13 @@ func GetAllAlumniService(c *fiber.Ctx, db *sql.DB) error {
     }
 
     return c.Status(fiber.StatusOK).JSON(fiber.Map{
-        "message": "Berhasil mendapatkan semua data alumni",
+        "message": "Berhasil mendapatkan semua data pekerjaan alumni",
         "success": true,
-        "alumni":  alumniList,
+        "pekerjaan alumni":  PekerjaanList,
     })
 }
 
-func GetAlumniByIDService(c *fiber.Ctx, db *sql.DB) error {
+func GetJobByIDService(c *fiber.Ctx, db *sql.DB) error {
     key := c.Get("X-API-KEY") 
     if key != os.Getenv("API_KEY") {
         return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -87,7 +50,7 @@ func GetAlumniByIDService(c *fiber.Ctx, db *sql.DB) error {
         })
     }
 
-    alumni, err := repository.GetAlumniByID(db, id)
+    p, err := repository.GetJobByID(db, id)
     if err != nil {
         return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
             "message": "Error: " + err.Error(),
@@ -95,22 +58,21 @@ func GetAlumniByIDService(c *fiber.Ctx, db *sql.DB) error {
         })
     }
 
-    if alumni == nil {
+    if p == nil {
         return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-            "message": "Alumni tidak ditemukan",
+            "message": "Pekerjaan tidak ditemukan",
             "success": false,
         })
     }
 
     return c.Status(fiber.StatusOK).JSON(fiber.Map{
-        "message": "Berhasil mendapatkan data alumni",
+        "message": "Berhasil mendapatkan data pekerjaan",
         "success": true,
-        "alumni": alumni,
+        "pekerjaan_alumni": p,
     })
 }
-
-func CreateAlumniService(c *fiber.Ctx, db *sql.DB) error {
-    key := c.Get("X-API-KEY") 
+func GetJobsByAlumniIDService(c *fiber.Ctx, db *sql.DB) error {
+    key := c.Get("X-API-KEY")
     if key != os.Getenv("API_KEY") {
         return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
             "message": "Key tidak valid",
@@ -118,31 +80,68 @@ func CreateAlumniService(c *fiber.Ctx, db *sql.DB) error {
         })
     }
 
-    var alumni model.Alumni
-    if err := c.BodyParser(&alumni); err != nil {
+    alumniID, err := strconv.Atoi(c.Params("alumni_id"))
+    if err != nil {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+            "message": "alumni_id tidak valid",
+            "success": false,
+        })
+    }
+
+    jobs, err := repository.GetJobsByAlumniID(db, alumniID)
+    if err != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+            "message": "Gagal mengambil data pekerjaan: " + err.Error(),
+            "success": false,
+        })
+    }
+
+    if len(jobs) == 0 {
+        return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+            "message": "Tidak ada pekerjaan untuk alumni ini",
+            "success": false,
+        })
+    }
+
+    return c.Status(fiber.StatusOK).JSON(fiber.Map{
+        "message": "Berhasil mendapatkan data pekerjaan",
+        "success": true,
+        "jobs":    jobs,
+    })
+}
+func CreateJobService(c *fiber.Ctx, db *sql.DB) error {
+    key := c.Get("X-API-KEY")
+    if key != os.Getenv("API_KEY") {
+        return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+            "message": "Key tidak valid",
+            "success": false,
+        })
+    }
+
+    var pekerjaan_alumni model.PekerjaanAlumni
+    if err := c.BodyParser(&pekerjaan_alumni); err != nil {
         return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
             "message": "Request body tidak valid",
             "success": false,
         })
     }
 
-    // insert ke DB
-   savedAlumni, err := repository.CreateAlumni(db, &alumni)
+    savedJob, err := repository.CreateJob(db, &pekerjaan_alumni)
     if err != nil {
         return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-            "message": "Gagal menambahkan alumni: " + err.Error(),
+            "message": "Gagal menambahkan pekerjaan: " + err.Error(),
             "success": false,
         })
     }
 
     return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-        "message": "Alumni berhasil ditambahkan",
+        "message": "Pekerjaan berhasil ditambahkan",
         "success": true,
-        "alumni":  savedAlumni, // sudah ada ID dari RETURNING
+        "pekerjaan_alumni":     savedJob,
     })
 }
 
-func UpdateAlumniService(c *fiber.Ctx, db *sql.DB) error {
+func UpdateJobService(c *fiber.Ctx, db *sql.DB) error {
     // Validasi API Key
     key := c.Get("X-API-KEY")
     if key != os.Getenv("API_KEY") {
@@ -156,8 +155,8 @@ func UpdateAlumniService(c *fiber.Ctx, db *sql.DB) error {
     id := c.Params("id")
 
     // Parse body ke struct Alumni
-    var alumni model.Alumni
-    if err := c.BodyParser(&alumni); err != nil {
+    var pekerjaan_alumni model.PekerjaanAlumni
+    if err := c.BodyParser(&pekerjaan_alumni); err != nil {
         return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
             "message": "Request body tidak valid",
             "success": false,
@@ -165,22 +164,22 @@ func UpdateAlumniService(c *fiber.Ctx, db *sql.DB) error {
     }
 
     // Update ke DB
-    updatedAlumni, err := repository.UpdateAlumni(db, id, &alumni)
+    updatedJob, err := repository.UpdateJob(db, id, &pekerjaan_alumni)
     if err != nil {
         return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-            "message": "Gagal mengupdate alumni: " + err.Error(),
+            "message": "Gagal mengupdate pekerjaan: " + err.Error(),
             "success": false,
         })
     }
 
     return c.Status(fiber.StatusOK).JSON(fiber.Map{
-        "message": "Alumni berhasil diperbarui",
+        "message": "pekerjaan berhasil diperbarui",
         "success": true,
-        "alumni": updatedAlumni,
+        "pekerjaan_alumni": updatedJob,
     })
 }
 
-func DeleteAlumniService(c *fiber.Ctx, db *sql.DB) error {
+func DeleteJobService(c *fiber.Ctx, db *sql.DB) error {
     // Validasi API Key
     key := c.Get("X-API-KEY")
     if key != os.Getenv("API_KEY") {
@@ -194,19 +193,16 @@ func DeleteAlumniService(c *fiber.Ctx, db *sql.DB) error {
     id := c.Params("id")
 
     //  Hapus alumni dari DB
-    err := repository.DeleteAlumni(db, id)
+    err := repository.DeleteJob(db, id)
     if err != nil {
         return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-            "message": "Gagal menghapus alumni: " + err.Error(),
+            "message": "Gagal menghapus pekerjaan alumni: " + err.Error(),
             "success": false,
         })
     }
 
     return c.Status(fiber.StatusOK).JSON(fiber.Map{
-        "message": "Alumni berhasil dihapus",
+        "message": "Pekerjaan alumni berhasil dihapus",
         "success": true,
     })
 }
-
-
-
