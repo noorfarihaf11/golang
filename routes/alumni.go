@@ -4,27 +4,30 @@ import (
 	"database/sql"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/noorfarihaf11/clean-arc/app/handler"
+	"github.com/noorfarihaf11/clean-arc/app/service"
+	"github.com/noorfarihaf11/clean-arc/middleware"
 )
 
-func AlumniRoutes(app *fiber.App, db *sql.DB) {
-	h := handler.NewAlumniHandler(db)
+func AlumniRoutes(api fiber.Router, db *sql.DB) {
+	alumni := api.Group("/unair/alumni", middleware.AuthRequired())
 
-	alumni := app.Group("/unair/alumni")
-	alumni.Get("/", h.GetAll)
-	alumni.Get("/:id", h.GetByID)
-	alumni.Post("/", h.Create)
-	alumni.Put("/:id", h.Update)
-	alumni.Delete("/:id", h.Delete)
-}
+	alumni.Get("/", func(c *fiber.Ctx) error {
+		return service.GetAllAlumniService(c, db)
+	})
 
-func JobRoutes(app *fiber.App, db *sql.DB) {
-	h := handler.NewJobHandler(db)
+	alumni.Get("/:id", func(c *fiber.Ctx) error {
+		return service.GetAlumniByIDService(c, db)
+	})
 
-	pekerjaan := app.Group("/unair/pekerjaan")
-	pekerjaan.Get("/", h.GetAll)
-	pekerjaan.Get("/:id", h.GetByID)
-	pekerjaan.Post("/", h.Create)
-	pekerjaan.Put("/:id", h.Update)
-	pekerjaan.Delete("/:id", h.Delete)
+	alumni.Post("/", middleware.AdminOnly(), func(c *fiber.Ctx) error {
+		return service.CreateAlumniService(c, db)
+	})
+
+	alumni.Put("/:id", middleware.AdminOnly(), func(c *fiber.Ctx) error {
+		return service.UpdateAlumniService(c, db)
+	})
+
+	alumni.Delete("/:id", middleware.AdminOnly(), func(c *fiber.Ctx) error {
+		return service.DeleteAlumniService(c, db)
+	})
 }

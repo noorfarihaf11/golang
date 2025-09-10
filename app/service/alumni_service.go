@@ -2,11 +2,15 @@ package service
 
 import (
 	"database/sql"
-    "os"
-    "github.com/gofiber/fiber/v2"
-    "github.com/noorfarihaf11/clean-arc/app/repository"
-    "github.com/noorfarihaf11/clean-arc/app/model"
-    "strconv"
+	"log"
+	"os"
+	"strconv"
+	"strings"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/noorfarihaf11/clean-arc/app/model"
+	"github.com/noorfarihaf11/clean-arc/app/repository"
+	"github.com/noorfarihaf11/clean-arc/utils"
 )
 
 func CheckAlumniService(c *fiber.Ctx, db *sql.DB) error {
@@ -47,14 +51,34 @@ func CheckAlumniService(c *fiber.Ctx, db *sql.DB) error {
 }
 
 func GetAllAlumniService(c *fiber.Ctx, db *sql.DB) error {
-    key := c.Get("X-API-KEY") 
-    if key != os.Getenv("API_KEY") {
+    // Ambil Authorization header
+    authHeader := c.Get("Authorization")
+    if authHeader == "" {
         return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-            "message": "Key tidak valid",
+            "message": "Authorization header tidak ada",
             "success": false,
         })
     }
 
+    // Format harus "Bearer <token>"
+    tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+    if tokenString == authHeader {
+        return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+            "message": "Format Authorization salah, gunakan Bearer <token>",
+            "success": false,
+        })
+    }
+
+    // Validasi JWT pakai utils
+    _, err := utils.ValidateToken(tokenString)
+    if err != nil {
+        return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+            "message": "Token tidak valid: " + err.Error(),
+            "success": false,
+        })
+    }
+
+    // Ambil data alumni
     alumniList, err := repository.GetAllAlumni(db)
     if err != nil {
         return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -71,10 +95,26 @@ func GetAllAlumniService(c *fiber.Ctx, db *sql.DB) error {
 }
 
 func GetAlumniByIDService(c *fiber.Ctx, db *sql.DB) error {
-    key := c.Get("X-API-KEY") 
-    if key != os.Getenv("API_KEY") {
+    authHeader := c.Get("Authorization") 
+    if authHeader == "" {
         return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-            "message": "Key tidak valid",
+            "message": "Authorization header tidak ada",
+            "success": false,
+        })
+    }
+
+    tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+    if tokenString == authHeader {
+        return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+            "message": "Format Authorization salah, gunakan Bearer <token>",
+            "success": false,
+        })
+    }
+
+    _, err := utils.ValidateToken(tokenString)
+    if err != nil {
+        return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+            "message": "Token tidak valid: " + err.Error(),
             "success": false,
         })
     }
@@ -110,10 +150,26 @@ func GetAlumniByIDService(c *fiber.Ctx, db *sql.DB) error {
 }
 
 func CreateAlumniService(c *fiber.Ctx, db *sql.DB) error {
-    key := c.Get("X-API-KEY") 
-    if key != os.Getenv("API_KEY") {
+   authHeader := c.Get("Authorization") 
+    if authHeader == "" {
         return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-            "message": "Key tidak valid",
+            "message": "Authorization header tidak ada",
+            "success": false,
+        })
+    }
+
+    tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+    if tokenString == authHeader {
+        return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+            "message": "Format Authorization salah, gunakan Bearer <token>",
+            "success": false,
+        })
+    }
+
+    _, err := utils.ValidateToken(tokenString)
+    if err != nil {
+        return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+            "message": "Token tidak valid: " + err.Error(),
             "success": false,
         })
     }
@@ -125,6 +181,9 @@ func CreateAlumniService(c *fiber.Ctx, db *sql.DB) error {
             "success": false,
         })
     }
+
+    username := c.Locals("username").(string) 
+    log.Printf("Admin %s menambah alumni baru", username)
 
     // insert ke DB
    savedAlumni, err := repository.CreateAlumni(db, &alumni)
@@ -144,10 +203,26 @@ func CreateAlumniService(c *fiber.Ctx, db *sql.DB) error {
 
 func UpdateAlumniService(c *fiber.Ctx, db *sql.DB) error {
     // Validasi API Key
-    key := c.Get("X-API-KEY")
-    if key != os.Getenv("API_KEY") {
+   authHeader := c.Get("Authorization") 
+    if authHeader == "" {
         return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-            "message": "Key tidak valid",
+            "message": "Authorization header tidak ada",
+            "success": false,
+        })
+    }
+
+    tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+    if tokenString == authHeader {
+        return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+            "message": "Format Authorization salah, gunakan Bearer <token>",
+            "success": false,
+        })
+    }
+
+    _, err := utils.ValidateToken(tokenString)
+    if err != nil {
+        return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+            "message": "Token tidak valid: " + err.Error(),
             "success": false,
         })
     }
@@ -173,6 +248,9 @@ func UpdateAlumniService(c *fiber.Ctx, db *sql.DB) error {
         })
     }
 
+    username := c.Locals("username").(string) 
+    log.Printf("Admin %s mengubah data alumni ID %s", username, id)
+
     return c.Status(fiber.StatusOK).JSON(fiber.Map{
         "message": "Alumni berhasil diperbarui",
         "success": true,
@@ -182,19 +260,34 @@ func UpdateAlumniService(c *fiber.Ctx, db *sql.DB) error {
 
 func DeleteAlumniService(c *fiber.Ctx, db *sql.DB) error {
     // Validasi API Key
-    key := c.Get("X-API-KEY")
-    if key != os.Getenv("API_KEY") {
+    authHeader := c.Get("Authorization")
+    if authHeader == "" {
         return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-            "message": "Key tidak valid",
+            "message": "Authorization header tidak ada",
             "success": false,
         })
     }
 
-    //  Ambil ID dari URL
+    tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+    if tokenString == authHeader {
+        return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+            "message": "Format Authorization salah, gunakan Bearer <token>",
+            "success": false,
+        })
+    }
+
+    _, err := utils.ValidateToken(tokenString)
+    if err != nil {
+        return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+            "message": "Token tidak valid: " + err.Error(),
+            "success": false,
+        })
+    }
+    // Ambil ID dari URL
     id := c.Params("id")
 
-    //  Hapus alumni dari DB
-    err := repository.DeleteAlumni(db, id)
+    // Hapus alumni dari DB
+    err = repository.DeleteAlumni(db, id) 
     if err != nil {
         return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
             "message": "Gagal menghapus alumni: " + err.Error(),
@@ -202,11 +295,16 @@ func DeleteAlumniService(c *fiber.Ctx, db *sql.DB) error {
         })
     }
 
+    username := c.Locals("username").(string) 
+    log.Printf("Admin %s menghapus mahasiswa ID %s", username, id)
+
     return c.Status(fiber.StatusOK).JSON(fiber.Map{
         "message": "Alumni berhasil dihapus",
         "success": true,
     })
 }
+
+
 
 
 
