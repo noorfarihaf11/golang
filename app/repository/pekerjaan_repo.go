@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"github.com/noorfarihaf11/clean-arc/app/model"
     "fmt"
+    "log"
 )
 
 func GetAllJobs(db *sql.DB) ([]model.PekerjaanAlumni, error) {
@@ -174,4 +175,87 @@ func DeleteJob(db *sql.DB, id string) error {
     }
 
     return nil
+}
+
+
+func GetTotalJobAlumni(db *sql.DB, alumniID int) ([]model.TotalJobAlumni, error)  {
+	rows,err := db.Query(`SELECT p.alumni_id, a.nama, count(*)
+     from pekerjaan_alumni as p
+        join alumni as a on p.alumni_id = a.id
+        where alumni_id=$1
+        group by p.alumni_id, a.nama
+        having count(*) > 1`, alumniID)
+
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []model.TotalJobAlumni
+	for rows.Next() {
+		var a model.TotalJobAlumni
+		err := rows.Scan(
+			&a.AlumniID, &a.NamaAlumni, &a.Count,
+		)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, a)
+	}
+
+	return results, nil
+}
+
+func GetJobRepo(db *sql.DB, search, sortBy, order string, limit, offset int) ([]model.PekerjaanAlumni, error) {
+    query := fmt.Sprintf(`
+       SELECT id, alumni_id, nama_perusahaan, posisi_jabatan, bidang_industri, lokasi_kerja, gaji_range,
+        tanggal_mulai_kerja, tanggal_selesai_kerja, status_pekerjaan, deskripsi_pekerjaan,
+        created_at, updated_at 
+        FROM pekerjaan_alumni
+        WHERE nama_perusahaan ILIKE $1 OR posisi_jabatan ILIKE $1 
+        OR bidang_industri ILIKE $1 OR lokasi_kerja ILIKE $1
+        OR gaji_range ILIKE $1
+        OR status_pekerjaan ILIKE $1
+        OR deskripsi_pekerjaan ILIKE $1
+        ORDER BY %s %s
+        LIMIT $2 OFFSET $3
+    `, sortBy, order)
+
+    rows, err := db.Query(query, "%"+search+"%", limit, offset)
+    if err != nil {
+        log.Println("Query error:", err)
+        return nil, err
+    }
+    defer rows.Close()
+
+    var pekerjaanList []model.PekerjaanAlumni
+    for rows.Next() {
+        var j model.PekerjaanAlumni
+        if err := rows.Scan(&j.ID, &j.AlumniID, &j.NamaPerusahaan, &j.PosisiJabatan, &j.BidangIndustri, &j.LokasiKerja,
+            &j.GajiRange, &j.TanggalMulaiKerja, &j.TanggalSelesaiKerja, &j.StatusPekerjaan, &j.DeskripsiPekerjaan, &j.CreatedAt,
+            &j.UpdatedAt,
+            ); err != nil {
+            return nil, err
+        }
+        pekerjaanList = append(pekerjaanList, j)
+    }
+
+    return pekerjaanList, nil
+}
+
+func CountJobRepo(db *sql.DB, search string) (int, error) {
+    var total int
+    countQuery := `SELECT COUNT(*) 
+    FROM pekerjaan_alumni 
+    WHERE nama_perusahaan ILIKE $1 OR posisi_jabatan ILIKE $1 
+    OR bidang_industri ILIKE $1 OR lokasi_kerja ILIKE $1
+    OR gaji_range ILIKE $1
+    OR status_pekerjaan ILIKE $1
+    OR deskripsi_pekerjaan ILIKE $1`
+    err := db.QueryRow(countQuery, "%"+search+"%").Scan(&total)
+    if err != nil && err != sql.ErrNoRows {
+        return 0, err
+    }
+    return total, nil
 }

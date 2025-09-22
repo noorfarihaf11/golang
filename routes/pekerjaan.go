@@ -12,7 +12,7 @@ func JobRoutes(api fiber.Router, db *sql.DB) {
 	job := api.Group("/unair/pekerjaan", middleware.AuthRequired())
 
 	job.Get("/", func(c *fiber.Ctx) error {
-		return service.GetAllJobService(c, db)
+		return service.GetJobService(c, db)
 	})
 
 	job.Get("/:id", func(c *fiber.Ctx) error {
@@ -33,5 +33,9 @@ func JobRoutes(api fiber.Router, db *sql.DB) {
 
 	job.Delete("/:id", middleware.AdminOnly(), func(c *fiber.Ctx) error {
 		return service.DeleteJobService(c, db)
+	})
+
+	job.Get("/filter/jobmoretwo/:id", func(c *fiber.Ctx) error {
+		return service.GetTotalJobAlumniService(c, db)
 	})
 }

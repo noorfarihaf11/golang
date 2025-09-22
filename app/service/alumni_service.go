@@ -2,6 +2,7 @@ package service
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -303,6 +304,102 @@ func DeleteAlumniService(c *fiber.Ctx, db *sql.DB) error {
         "success": true,
     })
 }
+
+func GetAlumniBySalaryService(c *fiber.Ctx, db *sql.DB) error {
+    alumnis, err := repository.GetAlumniWithHighSalary(db)
+    if err != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+            "message": "Gagal mengambil data alumni: " + err.Error(),
+            "success": false,
+        })
+    }
+
+    return c.Status(fiber.StatusOK).JSON(fiber.Map{
+        "message": "Berhasil mendapatkan data alumni dengan gaji > 20 juta",
+        "success": true,
+        "alumni": alumnis,
+    })
+}
+
+func GetAlumniByYearService(c *fiber.Ctx, db *sql.DB) error {
+    alumnis, err := repository.GetAllAlumniByYear(db)
+    if err != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+            "message": "Gagal mengambil data alumni: " + err.Error(),
+            "success": false,
+        })
+    }
+
+    return c.Status(fiber.StatusOK).JSON(fiber.Map{
+        "message": "Berhasil mendapatkan data alumni dengan tahun lulus 2023",
+        "success": true,
+        "alumni": alumnis,
+    })
+}
+
+    func GetAlumniWithYearService(c *fiber.Ctx, db *sql.DB) error {
+        alumnis, err := repository.GetAlumniWithYear(db)
+        if err != nil {
+            return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+                "message": "Gagal mengambil data alumni: " + err.Error(),
+                "success": false,
+            })
+        }
+
+        return c.Status(fiber.StatusOK).JSON(fiber.Map{
+            "message": "Berhasil mendapatkan data alumni dengan tahun lulus yang sama dengan bekerjanya",
+            "success": true,
+            "alumni": alumnis,
+        })
+    }
+
+func GetAlumniService(c *fiber.Ctx, db *sql.DB) error {
+    page, _ := strconv.Atoi(c.Query("page", "1"))
+    limit, _ := strconv.Atoi(c.Query("limit", "10"))
+    sortBy := c.Query("sortBy", "id")
+    order := c.Query("order", "asc")
+    search := c.Query("search", "")
+
+    offset := (page - 1) * limit
+
+    sortByWhitelist := map[string]bool{"id": true, "nama": true, "nim": true, "jurusan": true, "angkatan": true, "tahun_lulus": true}
+    if !sortByWhitelist[sortBy] {
+        sortBy = "id"
+    }
+    if strings.ToLower(order) != "desc" {
+        order = "asc"
+    }
+
+
+    alumni, err := repository.GetAlumniRepo(db, search, sortBy, order, limit, offset)
+     if err != nil {
+        fmt.Println("Query error:", err) // untuk cek di console
+         return c.Status(500).JSON(fiber.Map{
+        "error": err.Error(), // kirim error asli ke client
+    })
+    }
+
+    total, err := repository.CountAlumniRepo(db, search)
+    if err != nil {
+        return c.Status(500).JSON(fiber.Map{"error": "Failed to count alumni"})
+    }
+
+    response := model.AlumniResponse{
+        Data: alumni,
+        Meta: model.MetaInfo{
+            Page:   page,
+            Limit:  limit,
+            Total:  total,
+            Pages:  (total + limit - 1) / limit,
+            SortBy: sortBy,
+            Order:  order,
+            Search: search,
+        },
+    }
+
+    return c.JSON(response)
+}
+
 
 
 

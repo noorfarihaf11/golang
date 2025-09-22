@@ -18,3 +18,10 @@ type PekerjaanAlumni struct {
     UpdatedAt          time.Time  `json:"updated_at"`
 	Alumni 				*Alumni   `json:"alumni,omitempty"`
 }
+
+type TotalJobAlumni struct {
+    AlumniID       int    `json:"alumni_id"`
+    NamaAlumni     string `json:"nama_alumni"`
+    Count       int    `json:"count"`
+}
+

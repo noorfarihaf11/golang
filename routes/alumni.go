@@ -12,7 +12,7 @@ func AlumniRoutes(api fiber.Router, db *sql.DB) {
 	alumni := api.Group("/unair/alumni", middleware.AuthRequired())
 
 	alumni.Get("/", func(c *fiber.Ctx) error {
-		return service.GetAllAlumniService(c, db)
+		return service.GetAlumniService(c, db)
 	})
 
 	alumni.Get("/:id", func(c *fiber.Ctx) error {
@@ -30,4 +30,19 @@ func AlumniRoutes(api fiber.Router, db *sql.DB) {
 	alumni.Delete("/:id", middleware.AdminOnly(), func(c *fiber.Ctx) error {
 		return service.DeleteAlumniService(c, db)
 	})
+
+	alumni.Get("/filter/high-salary", func(c *fiber.Ctx) error {
+		return service.GetAlumniBySalaryService(c, db)
+	})
+
+	alumni.Get("/filter/year", func(c *fiber.Ctx) error {
+		return service.GetAlumniByYearService(c, db)
+	})
+
+	alumni.Get("/filter/yearjob", func(c *fiber.Ctx) error {
+		return service.GetAlumniWithYearService(c, db)
+	})
+
+
+	
 }

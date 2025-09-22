@@ -2,6 +2,7 @@ package service
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	_ "os"
 	"strconv"
@@ -327,3 +328,81 @@ func DeleteJobService(c *fiber.Ctx, db *sql.DB) error {
         "success": true,
     })
 }
+
+    func GetTotalJobAlumniService(c *fiber.Ctx, db *sql.DB) error {
+         id, err := strconv.Atoi(c.Params("id"))
+        if err != nil {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+            "message": "ID tidak valid",
+            "success": false,
+        })
+    }
+        results, err := repository.GetTotalJobAlumni(db, id)
+        if err != nil {
+            return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+                "message": "Alumni tidak lebih dari 1 pekerjaan " + err.Error(),
+                "success": false,
+            })
+        }
+
+        return c.Status(fiber.StatusOK).JSON(fiber.Map{
+            "message": "Berhasil mendapatkan data alumni yang memiliki lebih dari 1 pekerjaan",
+            "success": true,
+            "alumni": results,
+        })
+    }
+
+    
+func GetJobService(c *fiber.Ctx, db *sql.DB) error {
+    page, _ := strconv.Atoi(c.Query("page", "1"))
+    limit, _ := strconv.Atoi(c.Query("limit", "10"))
+    sortBy := c.Query("sortBy", "id")
+    order := c.Query("order", "asc")
+    search := c.Query("search", "")
+
+    offset := (page - 1) * limit
+
+    sortByWhitelist := map[string]bool{"id": true, 
+    "alumni_id": true, "nama_perusahaan": true, "posisi_jabatan": true, 
+    "bidang_industri": true, "lokasi_kerja": true, 
+    "gaji_range": true, "tanggal_mulai_kerja": true, 
+    "tanggal_selesai_kerja": true, "status_pekerjaan": true, 
+    "deskripsi_pekerjaan": true,     
+    }
+    if !sortByWhitelist[sortBy] {
+        sortBy = "id"
+    }
+    if strings.ToLower(order) != "desc" {
+        order = "asc"
+    }
+
+    pekerjaanList, err := repository.GetJobRepo(db, search, sortBy, order, limit, offset)
+    if err != nil {
+        fmt.Println("Query error:", err) // untuk cek di console
+         return c.Status(500).JSON(fiber.Map{
+        "error": err.Error(), // kirim error asli ke client
+    })
+    }
+
+    total, err := repository.CountJobRepo(db, search)
+    if err != nil {
+        return c.Status(500).JSON(fiber.Map{"error": "Failed to count pekerjaan alumni"})
+    }
+
+    response := model.PekerjaanAlumniResponse{
+        Data: pekerjaanList,
+        Meta: model.MetaInfo{
+            Page:   page,
+            Limit:  limit,
+            Total:  total,
+            Pages:  (total + limit - 1) / limit,
+            SortBy: sortBy,
+            Order:  order,
+            Search: search,
+        },
+    }
+
+    return c.JSON(response)
+}
+
+
