@@ -8,6 +8,7 @@ import (
 type User struct { 
     ID        int       `json:"id"` 
     Username  string    `json:"username"` 
+    PasswordHash string    `json:"password_hash"` 
     Email     string    `json:"email"` 
     Role      string    `json:"role"` 
     CreatedAt time.Time `json:"created_at"` 
@@ -27,3 +28,10 @@ type JWTClaims struct {
 	Role     string `json:"role"` 
 	jwt.RegisteredClaims 
 } 
+
+type RegisterRequest struct {
+    Username string `json:"username" validate:"unique,required,min=3,max=50"`
+    Email    string `json:"email" validate:"unique,required,email"`
+    Password string `json:"password" validate:"required,min=6"`
+}
+

@@ -11,7 +11,7 @@ import (
 func AlumniRoutes(api fiber.Router, db *sql.DB) {
 	alumni := api.Group("/unair/alumni", middleware.AuthRequired())
 
-	alumni.Get("/", func(c *fiber.Ctx) error {
+	alumni.Get("/",  func(c *fiber.Ctx) error {
 		return service.GetAlumniService(c, db)
 	})
 
@@ -19,7 +19,7 @@ func AlumniRoutes(api fiber.Router, db *sql.DB) {
 		return service.GetAlumniByIDService(c, db)
 	})
 
-	alumni.Post("/", middleware.AdminOnly(), func(c *fiber.Ctx) error {
+	alumni.Post("/", func(c *fiber.Ctx) error {
 		return service.CreateAlumniService(c, db)
 	})
 

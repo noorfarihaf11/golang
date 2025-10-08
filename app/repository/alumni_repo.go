@@ -43,14 +43,14 @@ func GetAllAlumni(db *sql.DB) ([]model.Alumni, error) {
 
 func GetAlumniByID(db *sql.DB, id int) (*model.Alumni, error) {
 	row := db.QueryRow(`SELECT id, nim, nama, jurusan, angkatan, tahun_lulus, 
-        email, no_telepon, alamat, created_at, updated_at 
+        email, no_telepon, alamat, created_at, updated_at, user_id 
         FROM alumni WHERE id=$1`, id)
 
 	var alumni model.Alumni
 	err := row.Scan(
 		&alumni.ID, &alumni.NIM, &alumni.Nama, &alumni.Jurusan, &alumni.Angkatan,
 		&alumni.TahunLulus, &alumni.Email, &alumni.NoTelp, &alumni.Alamat,
-		&alumni.CreatedAt, &alumni.UpdatedAt,
+		&alumni.CreatedAt, &alumni.UpdatedAt, &alumni.UserID,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -62,11 +62,11 @@ func GetAlumniByID(db *sql.DB, id int) (*model.Alumni, error) {
 	return &alumni, nil
 }
 
-func CreateAlumni(db *sql.DB, alumni *model.Alumni) (*model.Alumni, error) {
+func CreateAlumni(db *sql.DB, alumni *model.Alumni, userID int) (*model.Alumni, error) {
 	query := `
         INSERT INTO alumni 
-        (nim, nama, jurusan, angkatan, tahun_lulus, email, no_telepon, alamat, created_at, updated_at) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+        (nim, nama, jurusan, angkatan, tahun_lulus, email, no_telepon, alamat, user_id, created_at, updated_at) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
         RETURNING id
     `
 
@@ -79,12 +79,14 @@ func CreateAlumni(db *sql.DB, alumni *model.Alumni) (*model.Alumni, error) {
 		alumni.Email,
 		alumni.NoTelp,
 		alumni.Alamat,
+		userID,
 	).Scan(&alumni.ID)
 
 	if err != nil {
 		return nil, err
 	}
-
+	
+	alumni.UserID = userID 
 	return alumni, nil
 }
 

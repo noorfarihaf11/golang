@@ -183,11 +183,14 @@ func CreateAlumniService(c *fiber.Ctx, db *sql.DB) error {
         })
     }
 
+
+    userID := c.Locals("user_id").(int)
+
     username := c.Locals("username").(string) 
     log.Printf("Admin %s menambah alumni baru", username)
 
     // insert ke DB
-   savedAlumni, err := repository.CreateAlumni(db, &alumni)
+   savedAlumni, err := repository.CreateAlumni(db, &alumni, userID)
     if err != nil {
         return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
             "message": "Gagal menambahkan alumni: " + err.Error(),

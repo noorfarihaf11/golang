@@ -5,6 +5,7 @@ import "time"
 
 type Alumni struct {
 	ID         int        `json:"id"`
+	UserID     int        `json:"user_id"`
 	NIM        string     `json:"nim"`
 	Nama       string     `json:"nama"`
 	Jurusan    string     `json:"jurusan"`

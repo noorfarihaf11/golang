@@ -12,7 +12,7 @@ func JobRoutes(api fiber.Router, db *sql.DB) {
 	job := api.Group("/unair/pekerjaan", middleware.AuthRequired())
 
 	job.Get("/", func(c *fiber.Ctx) error {
-		return service.GetJobService(c, db)
+		return service.GetAllJobService(c, db)
 	})
 
 	job.Get("/:id", func(c *fiber.Ctx) error {
@@ -23,7 +23,7 @@ func JobRoutes(api fiber.Router, db *sql.DB) {
 		return service.GetJobsByAlumniIDService(c, db)
 	})
 
-	job.Post("/", middleware.AdminOnly(), func(c *fiber.Ctx) error {
+	job.Post("/", func(c *fiber.Ctx) error {
 		return service.CreateJobService(c, db)
 	})
 
@@ -31,11 +31,32 @@ func JobRoutes(api fiber.Router, db *sql.DB) {
 		return service.UpdateJobService(c, db)
 	})
 
-	job.Delete("/:id", middleware.AdminOnly(), func(c *fiber.Ctx) error {
+	job.Delete("/:id", func(c *fiber.Ctx) error {
 		return service.DeleteJobService(c, db)
+	})
+
+	job.Get("/filter/getbyrole", func(c *fiber.Ctx) error {
+		return service.GetJobByRoleService(c, db)
 	})
 
 	job.Get("/filter/jobmoretwo/:id", func(c *fiber.Ctx) error {
 		return service.GetTotalJobAlumniService(c, db)
 	})
+
+	job.Put("/update/:id", func(c *fiber.Ctx) error {
+		return service.UpdateJobByRoleService(c, db)
+	})
+
+	job.Get("/filter/trash", func(c *fiber.Ctx) error {
+		return service.GetTrashService(c, db)
+	})
+
+	job.Put("/filter/restore/:id", func(c *fiber.Ctx) error {
+		return service.RestoreService(c, db)
+	})
+
+	job.Delete("/filter/delete/:id", func(c *fiber.Ctx) error {
+		return service.HardDeleteService(c, db)
+	})
+
 }
