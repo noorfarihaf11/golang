@@ -1,12 +1,12 @@
 package routes
 
 import (
-	"database/sql"
+    "go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-func Routes(app *fiber.App, db *sql.DB) {
+func Routes(app *fiber.App, db *mongo.Database) {
 	api := app.Group("/")
 
 	AuthRoutes(api, db)

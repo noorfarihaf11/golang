@@ -10,12 +10,22 @@ import (
 
 func main() {
 	config.LoadEnv()
-	db := database.ConnectDB()
+
+	// Koneksi MongoDB
+	db, err := database.ConnectMongoDB()
+	if err != nil {
+		log.Fatalf("Gagal konek ke MongoDB: %v", err)
+	}
+
 	app := config.NewApp(db)
+
 	port := os.Getenv("APP_PORT")
-	routes.Routes(app, db)
 	if port == "" {
 		port = "3000"
 	}
+
+	routes.Routes(app, db)
+
+	log.Printf("Server running on port %s 🚀", port)
 	log.Fatal(app.Listen(":" + port))
 }

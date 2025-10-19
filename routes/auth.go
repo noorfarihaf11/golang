@@ -1,14 +1,14 @@
 package routes
 
 import (
-	"database/sql"
+	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/noorfarihaf11/clean-arc/app/model"
 	"github.com/noorfarihaf11/clean-arc/app/service"
 )
 
-func AuthRoutes(api fiber.Router, db *sql.DB) {
+func AuthRoutes(api fiber.Router, db *mongo.Database) {
 	
 	api.Post("/api/login", func(c *fiber.Ctx) error {
 		var req model.LoginRequest

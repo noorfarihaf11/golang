@@ -1,14 +1,14 @@
 package config
 
 import (
-	"database/sql"
+	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/noorfarihaf11/clean-arc/middleware"
 	"github.com/noorfarihaf11/clean-arc/routes"
 )
 
-func NewApp(db *sql.DB) *fiber.App {
+func NewApp(db *mongo.Database) *fiber.App {
 	app := fiber.New()
 
 	// Middleware global

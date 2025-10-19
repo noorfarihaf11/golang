@@ -1,8 +1,12 @@
 package service
 
 import (
-	"database/sql"
+	"context"
 	"errors"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/noorfarihaf11/clean-arc/app/model"
@@ -10,37 +14,43 @@ import (
 	"github.com/noorfarihaf11/clean-arc/utils"
 )
 
-func LoginService(db *sql.DB, req model.LoginRequest) (string, model.User, error) {
+func LoginService(db *mongo.Database, req model.LoginRequest) (string, *model.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	var user model.User
-	var passwordHash string
 
-	err := db.QueryRow(`
-		SELECT id, username, email, password_hash, role, created_at
-		FROM users
-		WHERE username = $1 OR email = $1
-	`, req.Username).Scan(
-		&user.ID, &user.Username, &user.Email, &passwordHash, &user.Role, &user.CreatedAt,
-	)
+	// cari user berdasarkan username atau email
+	filter := bson.M{
+		"$or": []bson.M{
+			{"username": req.Username},
+			{"email": req.Username},
+		},
+	}
 
+	err := db.Collection("users").FindOne(ctx, filter).Decode(&user)
 	if err != nil {
-		return "", user, errors.New("username atau password salah")
+		if err == mongo.ErrNoDocuments {
+			return "", nil, errors.New("username atau password salah")
+		}
+		return "", nil, err
 	}
 
 	// cek password
-	if !utils.CheckPassword(req.Password, passwordHash) {
-		return "", user, errors.New("password salah")
+	if !utils.CheckPassword(req.Password, user.PasswordHash) {
+		return "", nil, errors.New("password salah")
 	}
 
 	// generate JWT
 	token, err := utils.GenerateToken(user)
 	if err != nil {
-		return "", user, errors.New("gagal generate token")
+		return "", nil, errors.New("gagal generate token")
 	}
 
-	return token, user, nil
+	return token, &user, nil
 }
 
-func RegisterService(c *fiber.Ctx, db *sql.DB) error {
+func RegisterService(c *fiber.Ctx, db *mongo.Database) error {
 	var req model.RegisterRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -63,10 +73,11 @@ func RegisterService(c *fiber.Ctx, db *sql.DB) error {
 		Username:     req.Username,
 		Email:        req.Email,
 		PasswordHash: hashedPassword,
-		Role:         "alumni", // default alumni
+		Role:         req.Role, // default
+		CreatedAt:    time.Now(),
 	}
 
-	// simpan ke DB via repo
+	// simpan ke DB via repository
 	createdUser, err := repository.RegisterUser(db, user)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -75,7 +86,7 @@ func RegisterService(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 
-	// generate token
+	// generate token JWT
 	token, err := utils.GenerateToken(*createdUser)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
