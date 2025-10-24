@@ -52,14 +52,17 @@ func GetAlumniByID(db *mongo.Database, id string) (*model.Alumni, error) {
 	return &job, nil
 }
 
-func CreateAlumni(db *mongo.Database, alumni *model.Alumni, userID primitive.ObjectID) (*model.Alumni, error) {
+func CreateAlumni(db *mongo.Database, alumni *model.Alumni, userID *primitive.ObjectID) (*model.Alumni, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	alumni.ID = primitive.NewObjectID()
-	alumni.UserID = userID // tambahkan relasi user ke alumni
 	alumni.CreatedAt = time.Now()
 	alumni.UpdatedAt = time.Now()
+
+	if userID != nil {
+		alumni.UserID = userID
+	}
 
 	_, err := db.Collection("alumni").InsertOne(ctx, alumni)
 	if err != nil {
@@ -67,6 +70,7 @@ func CreateAlumni(db *mongo.Database, alumni *model.Alumni, userID primitive.Obj
 	}
 	return alumni, nil
 }
+
 
 func UpdateAlumni(db *mongo.Database, id string, data *model.Alumni) (*model.Alumni, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

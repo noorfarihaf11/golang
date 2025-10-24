@@ -1,17 +1,19 @@
 package service
 
 import (
-    "go.mongodb.org/mongo-driver/mongo"
-	_"fmt"
+	_ "fmt"
 	"log"
-	_"os"
-	_"strconv"
+	_ "os"
+	_ "strconv"
 	"strings"
-    _"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/noorfarihaf11/clean-arc/app/model"
 	"github.com/noorfarihaf11/clean-arc/app/repository"
 	"github.com/noorfarihaf11/clean-arc/utils"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	_ "go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func GetAllAlumniService(c *fiber.Ctx, db *mongo.Database) error {
@@ -83,9 +85,6 @@ func CreateAlumniService(c *fiber.Ctx, db *mongo.Database) error {
 		})
 	}
 
-	// Ambil user ID dari claims JWT
-	userID := claims.UserID  // langsung ambil dari JWTClaims, sudah ObjectID
-
 	var alumni model.Alumni
 	if err := c.BodyParser(&alumni); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -94,11 +93,18 @@ func CreateAlumniService(c *fiber.Ctx, db *mongo.Database) error {
 		})
 	}
 
-	// Logging
+	var userID *primitive.ObjectID
 	username := claims.Username
-	log.Printf("Admin %s menambah alumni baru", username)
 
-	// Insert ke database
+	// Cek role user dari token
+	if claims.Role == "admin" {
+		log.Printf("Admin %s menambah alumni baru", username)
+		userID = nil
+	} else {
+		log.Printf("User %s (alumni) menambah data dirinya sendiri", username)
+		userID = &claims.UserID
+	}
+
 	savedAlumni, err := repository.CreateAlumni(db, &alumni, userID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -113,7 +119,6 @@ func CreateAlumniService(c *fiber.Ctx, db *mongo.Database) error {
 		"alumni":  savedAlumni,
 	})
 }
-
 
 func UpdateAlumniService(c *fiber.Ctx, db *mongo.Database) error {
     // Validasi API Key

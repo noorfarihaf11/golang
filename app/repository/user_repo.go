@@ -18,7 +18,7 @@ func RegisterUser(db *mongo.Database, user *model.User) (*model.User, error) {
 	user.ID = primitive.NewObjectID()
 	user.CreatedAt = time.Now()
 
-	// ✅ Masukkan user ke collection users
+	// ✅ Simpan user baru ke collection users
 	_, err := db.Collection("users").InsertOne(ctx, user)
 	if err != nil {
 		return nil, fmt.Errorf("gagal menambahkan user: %v", err)
@@ -27,22 +27,28 @@ func RegisterUser(db *mongo.Database, user *model.User) (*model.User, error) {
 	// 🧠 Debug untuk memastikan role terbaca
 	fmt.Println("DEBUG ROLE:", user.Role)
 
-	// ✅ Hanya jika role == "alumni", insert juga ke koleksi alumni
-	if strings.TrimSpace(strings.ToLower(user.Role)) == "alumni" {
+	role := strings.TrimSpace(strings.ToLower(user.Role))
+	switch role {
+	case "alumni":
+		// ✅ Jika user role = alumni, otomatis buat data di koleksi alumni
 		alumni := model.Alumni{
 			ID:        primitive.NewObjectID(),
-			UserID:    user.ID,
+			UserID:    &user.ID, // pakai pointer, karena field opsional
 			Nama:      user.Username,
 			Email:     user.Email,
 			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
 		}
 
 		_, err = db.Collection("alumni").InsertOne(ctx, alumni)
 		if err != nil {
 			return nil, fmt.Errorf("gagal menambahkan data alumni: %v", err)
 		}
-	} else {
-		fmt.Println("➡️ Role bukan alumni, tidak dimasukkan ke tabel alumni.")
+
+		fmt.Println("✅ Data alumni berhasil dibuat otomatis untuk user:", user.Username)
+
+	default:
+		fmt.Println("➡️ Role bukan alumni, tidak dimasukkan ke koleksi alumni.")
 	}
 
 	return user, nil

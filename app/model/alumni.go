@@ -8,7 +8,7 @@ import (
 
 type Alumni struct {
     ID         primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-    UserID   primitive.ObjectID `bson:"user_id" json:"user_id"`
+    UserID     *primitive.ObjectID `bson:"user_id" json:"user_id"`
 	NIM        string     `bson:"nim" json:"nim"`
 	Nama       string     `bson:"nama" json:"nama"`
 	Jurusan    string     `bson:"jurusan" json:"jurusan"`
@@ -17,7 +17,7 @@ type Alumni struct {
 	Email      string     `bson:"email" json:"email"`
 	NoTelp     *string    `bson:"no_telepon" json:"no_telepon"`
 	Alamat     *string    `bson:"alamat" json:"alamat"`
-	CreatedAt  time.Time  `bson: "created_at" json:"created_at"`
+	CreatedAt  time.Time  `bson:"created_at" json:"created_at"`
 	UpdatedAt  time.Time  `bson:"updated_at" json:"updated_at"`
 }
 
