@@ -1,13 +1,15 @@
-package middleware 
- 
-import ( 
-   	"github.com/noorfarihaf11/clean-arc/utils"
-    "strings" 
- 
-    "github.com/gofiber/fiber/v2" 
-) 
- 
-// Middleware untuk memerlukan login 
+package middleware
+
+import (
+	"strings"
+
+	"github.com/noorfarihaf11/clean-arc/utils"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
+	"github.com/gofiber/fiber/v2"
+)
+
+// Middleware untuk memerlukan login
 func AuthRequired() fiber.Handler { 
     return func(c *fiber.Ctx) error { 
         // Ambil token dari header Authorization 
@@ -54,4 +56,33 @@ func AdminOnly() fiber.Handler {
         } 
         return c.Next() 
     } 
-			}
+}
+func UserAccessMiddleware() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		role := c.Locals("role").(string)
+		userIDFromToken := c.Locals("user_id")
+
+		userIDParam := c.Params("user_id")
+
+		// Kalau admin, langsung lanjut
+		if role == "admin" {
+			return c.Next()
+		}
+
+		// Kalau user biasa, pastikan user_id di URL sama dengan token JWT
+		userObjectID, ok := userIDFromToken.(primitive.ObjectID)
+		if !ok {
+			return c.Status(500).JSON(fiber.Map{
+				"error": "Invalid user ID type in token",
+			})
+		}
+
+		if userObjectID.Hex() != userIDParam {
+			return c.Status(403).JSON(fiber.Map{
+				"error": "Akses ditolak. Anda hanya bisa upload untuk diri sendiri",
+			})
+		}
+
+		return c.Next()
+	}
+}

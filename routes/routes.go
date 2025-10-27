@@ -12,4 +12,5 @@ func Routes(app *fiber.App, db *mongo.Database) {
 	AuthRoutes(api, db)
 	AlumniRoutes(api, db)
 	JobRoutes(api, db)
+	FileRoutes(api, db)
 }

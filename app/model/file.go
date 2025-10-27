@@ -7,6 +7,7 @@ import (
 
 type File struct {
 	ID           primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	UserID		primitive.ObjectID	`json:"user_id" bson:"user_id"`
 	FileName     string             `json:"file_name" bson:"file_name"`
 	OriginalName string             `json:"original_name"bson:"original_name"`
 	FilePath   string    `json:"file_path" bson:"file_path"`
@@ -16,7 +17,8 @@ type File struct {
 }
 
 type FileResponse struct {
-	ID           string    `json:"id"`
+	ID           primitive.ObjectID  `json:"id"`
+	UserID		 primitive.ObjectID `json:"user_id"`
 	FileName     string    `json:"file_name"`
 	OriginalName string    `json:"original_name"`
 	FilePath     string    `json:"file_path"`
