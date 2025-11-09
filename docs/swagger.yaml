@@ -1,0 +1,913 @@
+definitions:
+  model.Alumni:
+    properties:
+      alamat:
+        type: string
+      angkatan:
+        type: integer
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      jurusan:
+        type: string
+      nama:
+        type: string
+      nim:
+        type: string
+      no_telepon:
+        type: string
+      tahun_lulus:
+        type: integer
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  model.AlumniResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/model.Alumni'
+        type: array
+      message:
+        type: string
+      meta:
+        $ref: '#/definitions/model.MetaInfo'
+      success:
+        type: boolean
+    type: object
+  model.ErrorResponse:
+    properties:
+      code:
+        example: 401
+        type: integer
+      message:
+        example: Token tidak valid
+        type: string
+      success:
+        example: false
+        type: boolean
+    type: object
+  model.FileResponse:
+    properties:
+      file_name:
+        type: string
+      file_path:
+        type: string
+      file_size:
+        type: integer
+      file_type:
+        type: string
+      id:
+        type: string
+      original_name:
+        type: string
+      uploaded_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  model.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  model.MetaInfo:
+    properties:
+      limit:
+        type: integer
+      order:
+        type: string
+      page:
+        type: integer
+      pages:
+        type: integer
+      search:
+        type: string
+      sortBy:
+        type: string
+      total:
+        type: integer
+    type: object
+  model.PekerjaanAlumni:
+    properties:
+      alumni_id:
+        type: string
+      alumni_id_str:
+        description: bantu parsing dari JSON
+        type: string
+      bidang_industri:
+        type: string
+      created_at:
+        type: string
+      deskripsi_pekerjaan:
+        type: string
+      gaji_range:
+        type: string
+      id:
+        type: string
+      is_deleted:
+        type: boolean
+      lokasi_kerja:
+        type: string
+      nama_perusahaan:
+        type: string
+      posisi_jabatan:
+        type: string
+      status_pekerjaan:
+        type: string
+      tanggal_mulai_kerja:
+        type: string
+      tanggal_selesai_kerja:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  model.PekerjaanAlumniResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/model.PekerjaanAlumni'
+        type: array
+      message:
+        type: string
+      meta:
+        $ref: '#/definitions/model.MetaInfo'
+      success:
+        type: boolean
+    type: object
+  model.RegisterRequest:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 6
+        type: string
+      role:
+        type: string
+      username:
+        maxLength: 50
+        minLength: 3
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
+  model.SingleAlumniResponse:
+    properties:
+      alumni:
+        $ref: '#/definitions/model.Alumni'
+      message:
+        example: Alumni berhasil ditambahkan
+        type: string
+      success:
+        example: true
+        type: boolean
+    type: object
+  model.SinglePekerjaanResponse:
+    properties:
+      message:
+        example: Pekerjaan berhasil ditambahkan
+        type: string
+      pekerjaan_alumni:
+        $ref: '#/definitions/model.PekerjaanAlumni'
+      success:
+        example: true
+        type: boolean
+    type: object
+  model.Trash:
+    properties:
+      alumni_id:
+        type: string
+      id:
+        type: string
+      is_deleted:
+        type: boolean
+      nama_alumni:
+        type: string
+      nama_perusahaan:
+        type: string
+    type: object
+  model.TrashResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/model.Trash'
+        type: array
+      message:
+        type: string
+      meta:
+        $ref: '#/definitions/model.MetaInfo'
+      success:
+        type: boolean
+    type: object
+info:
+  contact: {}
+paths:
+  /api/files:
+    get:
+      description: Mengambil daftar semua file beserta metadata-nya
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Daftar file berhasil diambil
+          schema:
+            items:
+              $ref: '#/definitions/model.FileResponse'
+            type: array
+        "500":
+          description: Kesalahan server
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Mendapatkan semua file yang diunggah
+      tags:
+      - File
+  /api/files/{id}:
+    delete:
+      description: Menghapus file dari penyimpanan dan metadata dari database
+      parameters:
+      - description: ID File
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Berhasil menghapus file
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: File tidak ditemukan
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Kesalahan server
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Menghapus file
+      tags:
+      - File
+    get:
+      description: Mengambil metadata dan informasi file sesuai ID
+      parameters:
+      - description: ID File
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Berhasil mengambil file
+          schema:
+            $ref: '#/definitions/model.FileResponse'
+        "404":
+          description: File tidak ditemukan
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Kesalahan server
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Mendapatkan file berdasarkan ID
+      tags:
+      - File
+  /api/files/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Mengunggah file umum (gambar/pdf) dengan validasi ukuran dan tipe
+        file
+      parameters:
+      - description: File yang akan diunggah
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Berhasil mengunggah file
+          schema:
+            $ref: '#/definitions/model.FileResponse'
+        "400":
+          description: File tidak valid
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Kesalahan server
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Mengunggah file ke server
+      tags:
+      - File
+  /api/files/upload/certificate/{user_id}:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Mengunggah file PDF sertifikat maksimal 2MB
+      parameters:
+      - description: ID User
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - description: Sertifikat yang akan diunggah
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Berhasil mengunggah sertifikat
+          schema:
+            $ref: '#/definitions/model.FileResponse'
+        "400":
+          description: Kesalahan input
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Kesalahan server
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Upload sertifikat
+      tags:
+      - File
+  /api/files/upload/photo/{user_id}:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Mengunggah file gambar (JPG, JPEG, PNG) maksimal 1MB
+      parameters:
+      - description: ID User
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - description: Foto yang akan diunggah
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Berhasil mengunggah foto
+          schema:
+            $ref: '#/definitions/model.FileResponse'
+        "400":
+          description: Kesalahan input
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Kesalahan server
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Upload foto profil
+      tags:
+      - File
+  /api/login:
+    post:
+      consumes:
+      - application/json
+      description: Mengautentikasi user dan mengembalikan token JWT
+      parameters:
+      - description: Data login user
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: token dan data user
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Masuk ke dalam sistem
+      tags:
+      - Users
+  /api/register:
+    post:
+      consumes:
+      - application/json
+      description: Membuat user baru dan mengembalikan token JWT
+      parameters:
+      - description: Data registrasi user
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Token dan data user yang terdaftar
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Mendaftar ke dalam sistem
+      tags:
+      - Users
+  /unair/alumni:
+    get:
+      consumes:
+      - application/json
+      description: Mengembalikan daftar semua alumni yang terdaftar dalam sistem
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Berhasil mengambil data alumni
+          schema:
+            $ref: '#/definitions/model.AlumniResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Mengambil semua data alumni
+      tags:
+      - Alumni
+    post:
+      consumes:
+      - application/json
+      description: Menambahkan data alumni baru ke dalam sistem
+      parameters:
+      - description: Data Alumni
+        in: body
+        name: alumni
+        required: true
+        schema:
+          $ref: '#/definitions/model.Alumni'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Berhasil menambahkan data alumni
+          schema:
+            $ref: '#/definitions/model.SingleAlumniResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Menambahkan data alumni baru
+      tags:
+      - Alumni
+  /unair/alumni/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Menghapus data alumni dari sistem
+      parameters:
+      - description: ID Alumni
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Berhasil menghapus data alumni
+          schema:
+            $ref: '#/definitions/model.SingleAlumniResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Menghapus data alumni
+      tags:
+      - Alumni
+    get:
+      consumes:
+      - application/json
+      description: Mengembalikan detail satu alumni berdasarkan ID
+      parameters:
+      - description: ID Alumni
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Berhasil mengambil data alumni
+          schema:
+            $ref: '#/definitions/model.SingleAlumniResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Mengambil data alumni berdasarkan ID
+      tags:
+      - Alumni
+    put:
+      consumes:
+      - application/json
+      description: Mengubah data alumni yang sudah ada dalam sistem
+      parameters:
+      - description: ID Alumni
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Alumni'
+        "201":
+          description: Berhasil memperbarui data alumni
+          schema:
+            $ref: '#/definitions/model.SingleAlumniResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Mengubah data alumni
+      tags:
+      - Alumni
+  /unair/pekerjaan:
+    get:
+      consumes:
+      - application/json
+      description: Mengembalikan daftar semua pekerjaan alumni yang tersedia
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Berhasil mengambil data pekerjaan alumni
+          schema:
+            $ref: '#/definitions/model.PekerjaanAlumniResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Mendapatkan semua data pekerjaan
+      tags:
+      - PekerjaanAlumni
+    post:
+      consumes:
+      - application/json
+      description: Membuat entri pekerjaan baru untuk alumni
+      parameters:
+      - description: Data Pekerjaan
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/model.PekerjaanAlumni'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Berhasil menambahkan data pekerjaan alumni
+          schema:
+            $ref: '#/definitions/model.SinglePekerjaanResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Menambahkan pekerjaan baru
+      tags:
+      - PekerjaanAlumni
+  /unair/pekerjaan/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Mengambil data pekerjaan sesuai ID pekerjaan
+      parameters:
+      - description: ID Pekerjaan
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Berhasil mengambil data pekerjaan alumni
+          schema:
+            $ref: '#/definitions/model.SinglePekerjaanResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Mendapatkan pekerjaan berdasarkan ID
+      tags:
+      - PekerjaanAlumni
+    put:
+      consumes:
+      - application/json
+      description: Mengubah data pekerjaan berdasarkan ID
+      parameters:
+      - description: ID Pekerjaan
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Data Pekerjaan Baru
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/model.PekerjaanAlumni'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Berhasil mengupdate data pekerjaan alumni
+          schema:
+            $ref: '#/definitions/model.SinglePekerjaanResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Memperbarui data pekerjaan
+      tags:
+      - PekerjaanAlumni
+  /unair/pekerjaan/alumni/{alumni_id}:
+    get:
+      consumes:
+      - application/json
+      description: Mengembalikan semua pekerjaan yang dimiliki oleh seorang alumni
+      parameters:
+      - description: ID Alumni
+        in: path
+        name: alumni_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Berhasil mengambil data pekerjaan alumni
+          schema:
+            $ref: '#/definitions/model.SinglePekerjaanResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Mendapatkan pekerjaan berdasarkan ID alumni
+      tags:
+      - PekerjaanAlumni
+  /unair/pekerjaan/filter/delete/{id}:
+    delete:
+      description: Menghapus pekerjaan dari trash berdasarkan ID secara permanen
+      parameters:
+      - description: ID pekerjaan
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Pekerjaan berhasil dihapus permanen
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Tidak diizinkan menghapus pekerjaan
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Gagal delete data
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Menghapus data secara permanen
+      tags:
+      - Trash
+  /unair/pekerjaan/filter/restore/{id}:
+    get:
+      description: Melakukan restore terhadap pekerjaan berdasarkan ID
+      parameters:
+      - description: ID pekerjaan
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Berhasil restore pekerjaan
+          schema:
+            $ref: '#/definitions/model.TrashResponse'
+        "403":
+          description: Tidak diizinkan menghapus pekerjaan
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Gagal restore data
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Mengembalikan data dari trash
+      tags:
+      - Trash
+  /unair/pekerjaan/filter/trash:
+    get:
+      description: Mengambil semua data pekerjaan yang sudah dihapus (soft delete)
+        berdasarkan role pengguna
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Berhasil mengambil data trash
+          schema:
+            $ref: '#/definitions/model.TrashResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Tidak ada trash
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Gagal mengambil trash
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Mendapatkan daftar data yang ada di trash
+      tags:
+      - Trash
+  /unair/pekerjaan/filter/trash/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Menghapus data pekerjaan secara soft delete
+      parameters:
+      - description: ID Pekerjaan
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Berhasil menghapus data pekerjaan alumni
+          schema:
+            $ref: '#/definitions/model.SinglePekerjaanResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Menghapus pekerjaan (soft delete)
+      tags:
+      - PekerjaanAlumni
+swagger: "2.0"

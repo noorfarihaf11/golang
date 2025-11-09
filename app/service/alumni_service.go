@@ -1,10 +1,7 @@
 package service
 
 import (
-	_ "fmt"
 	"log"
-	_ "os"
-	_ "strconv"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -12,54 +9,119 @@ import (
 	"github.com/noorfarihaf11/clean-arc/app/repository"
 	"github.com/noorfarihaf11/clean-arc/utils"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	_ "go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// GetAllAlumniService godoc
+// @Summary Mengambil semua data alumni
+// @Description Mengembalikan daftar semua alumni yang terdaftar dalam sistem
+// @Tags Alumni
+// @Accept json
+// @Produce json
+// @Success 200 {object} model.AlumniResponse "Berhasil mengambil data alumni"
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /unair/alumni [get]
 func GetAllAlumniService(c *fiber.Ctx, db *mongo.Database) error {
-    // Ambil Authorization header
-    authHeader := c.Get("Authorization")
-    if authHeader == "" {
-        return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-            "message": "Authorization header tidak ada",
-            "success": false,
-        })
-    }
+	authHeader := c.Get("Authorization")
+	if authHeader == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Authorization header tidak ada",
+			"success": false,
+		})
+	}
 
-    // Format harus "Bearer <token>"
-    tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-    if tokenString == authHeader {
-        return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-            "message": "Format Authorization salah, gunakan Bearer <token>",
-            "success": false,
-        })
-    }
+	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+	if tokenString == authHeader {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Format Authorization salah, gunakan Bearer <token>",
+			"success": false,
+		})
+	}
 
-    // Validasi JWT pakai utils
-    _, err := utils.ValidateToken(tokenString)
-    if err != nil {
-        return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-            "message": "Token tidak valid: " + err.Error(),
-            "success": false,
-        })
-    }
+	_, err := utils.ValidateToken(tokenString)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Token tidak valid: " + err.Error(),
+			"success": false,
+		})
+	}
 
-    // Ambil data alumni
-    alumniList, err := repository.GetAllAlumni(db)
-    if err != nil {
-        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-            "message": "Error: " + err.Error(),
-            "success": false,
-        })
-    }
+	alumniList, err := repository.GetAllAlumni(db)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Gagal mengambil data alumni: " + err.Error(),
+			"success": false,
+		})
+	}
 
-    return c.Status(fiber.StatusOK).JSON(fiber.Map{
-        "message": "Berhasil mendapatkan semua data alumni",
-        "success": true,
-        "alumni":  alumniList,
-    })
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Berhasil mendapatkan semua data alumni",
+		"success": true,
+		"alumni":  alumniList,
+	})
 }
 
+// GetAlumniByIDService godoc
+// @Summary Mengambil data alumni berdasarkan ID
+// @Description Mengembalikan detail satu alumni berdasarkan ID
+// @Tags Alumni
+// @Accept json
+// @Produce json
+// @Param id path string true "ID Alumni"
+// @Success 201 {object} model.SingleAlumniResponse "Berhasil mengambil data alumni"
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /unair/alumni/{id} [get]
+func GetAlumniByIDService(c *fiber.Ctx, db *mongo.Database) error {
+	id := c.Params("id")
+
+	if _, err := primitive.ObjectIDFromHex(id); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(model.ErrorResponse{
+			Success: false,
+			Message: "ID tidak valid",
+			Code:    fiber.StatusBadRequest,
+		})
+	}
+
+	alumni, err := repository.GetAlumniByID(db, id)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return c.Status(fiber.StatusNotFound).JSON(model.ErrorResponse{
+				Success: false,
+				Message: "Alumni tidak ditemukan",
+				Code:    fiber.StatusNotFound,
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(model.ErrorResponse{
+			Success: false,
+			Message: "Gagal mengambil data alumni",
+			Code:    fiber.StatusInternalServerError,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"success": true,
+		"message": "Berhasil mendapatkan data alumni",
+		"alumni":  alumni,
+	})
+}
+
+
+// CreateAlumniService godoc
+// @Summary Menambahkan data alumni baru
+// @Description Menambahkan data alumni baru ke dalam sistem
+// @Tags Alumni
+// @Accept json
+// @Produce json
+// @Param alumni body model.Alumni true "Data Alumni"
+// @Success 201 {object} model.SingleAlumniResponse "Berhasil menambahkan data alumni"
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /unair/alumni [post]
 func CreateAlumniService(c *fiber.Ctx, db *mongo.Database) error {
 	authHeader := c.Get("Authorization")
 	if authHeader == "" {
@@ -94,14 +156,11 @@ func CreateAlumniService(c *fiber.Ctx, db *mongo.Database) error {
 	}
 
 	var userID *primitive.ObjectID
-	username := claims.Username
-
-	// Cek role user dari token
 	if claims.Role == "admin" {
-		log.Printf("Admin %s menambah alumni baru", username)
+		log.Printf("Admin %s menambah alumni baru", claims.Username)
 		userID = nil
 	} else {
-		log.Printf("User %s (alumni) menambah data dirinya sendiri", username)
+		log.Printf("User %s (alumni) menambah data dirinya sendiri", claims.Username)
 		userID = &claims.UserID
 	}
 
@@ -120,206 +179,135 @@ func CreateAlumniService(c *fiber.Ctx, db *mongo.Database) error {
 	})
 }
 
+// UpdateAlumniService godoc
+// @Summary Mengubah data alumni
+// @Description Mengubah data alumni yang sudah ada dalam sistem
+// @Tags Alumni
+// @Accept json
+// @Produce json
+// @Param id path string true "ID Alumni"
+// @Success 201 {object} model.SingleAlumniResponse "Berhasil memperbarui data alumni"
+// @Success 200 {object} model.Alumni
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /unair/alumni/{id} [put]
 func UpdateAlumniService(c *fiber.Ctx, db *mongo.Database) error {
-    // Validasi API Key
-   authHeader := c.Get("Authorization") 
-    if authHeader == "" {
-        return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-            "message": "Authorization header tidak ada",
-            "success": false,
-        })
-    }
+	authHeader := c.Get("Authorization")
+	if authHeader == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Authorization header tidak ada",
+			"success": false,
+		})
+	}
 
-    tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-    if tokenString == authHeader {
-        return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-            "message": "Format Authorization salah, gunakan Bearer <token>",
-            "success": false,
-        })
-    }
+	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+	if tokenString == authHeader {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Format Authorization salah, gunakan Bearer <token>",
+			"success": false,
+		})
+	}
 
-    _, err := utils.ValidateToken(tokenString)
-    if err != nil {
-        return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-            "message": "Token tidak valid: " + err.Error(),
-            "success": false,
-        })
-    }
+	_, err := utils.ValidateToken(tokenString)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Token tidak valid: " + err.Error(),
+			"success": false,
+		})
+	}
 
-    // Ambil ID dari URL
-    id := c.Params("id")
+	id := c.Params("id")
+	if _, err := primitive.ObjectIDFromHex(id); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "ID tidak valid",
+			"success": false,
+		})
+	}
 
-    // Parse body ke struct Alumni
-    var alumni model.Alumni
-    if err := c.BodyParser(&alumni); err != nil {
-        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-            "message": "Request body tidak valid",
-            "success": false,
-        })
-    }
+	var alumni model.Alumni
+	if err := c.BodyParser(&alumni); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Request body tidak valid",
+			"success": false,
+		})
+	}
 
-    // Update ke DB
-    updatedAlumni, err := repository.UpdateAlumni(db, id, &alumni)
-    if err != nil {
-        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-            "message": "Gagal mengupdate alumni: " + err.Error(),
-            "success": false,
-        })
-    }
+	updatedAlumni, err := repository.UpdateAlumni(db, id, &alumni)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Gagal mengupdate alumni: " + err.Error(),
+			"success": false,
+		})
+	}
 
-    username := c.Locals("username").(string) 
-    log.Printf("Admin %s mengubah data alumni ID %s", username, id)
+	username, _ := c.Locals("username").(string)
+	log.Printf("User %s mengubah data alumni ID %s", username, id)
 
-    return c.Status(fiber.StatusOK).JSON(fiber.Map{
-        "message": "Alumni berhasil diperbarui",
-        "success": true,
-        "alumni": updatedAlumni,
-    })
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Alumni berhasil diperbarui",
+		"success": true,
+		"alumni":  updatedAlumni,
+	})
 }
 
+// DeleteAlumniService godoc
+// @Summary Menghapus data alumni
+// @Description Menghapus data alumni dari sistem
+// @Tags Alumni
+// @Accept json
+// @Produce json
+// @Param id path string true "ID Alumni"
+// @Success 201 {object} model.SingleAlumniResponse "Berhasil menghapus data alumni"
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /unair/alumni/{id} [delete]
 func DeleteAlumniService(c *fiber.Ctx, db *mongo.Database) error {
-    // Validasi API Key
-    authHeader := c.Get("Authorization")
-    if authHeader == "" {
-        return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-            "message": "Authorization header tidak ada",
-            "success": false,
-        })
-    }
+	authHeader := c.Get("Authorization")
+	if authHeader == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Authorization header tidak ada",
+			"success": false,
+		})
+	}
 
-    tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-    if tokenString == authHeader {
-        return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-            "message": "Format Authorization salah, gunakan Bearer <token>",
-            "success": false,
-        })
-    }
+	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+	if tokenString == authHeader {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Format Authorization salah, gunakan Bearer <token>",
+			"success": false,
+		})
+	}
 
-    _, err := utils.ValidateToken(tokenString)
-    if err != nil {
-        return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-            "message": "Token tidak valid: " + err.Error(),
-            "success": false,
-        })
-    }
-    // Ambil ID dari URL
-    id := c.Params("id")
+	_, err := utils.ValidateToken(tokenString)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Token tidak valid: " + err.Error(),
+			"success": false,
+		})
+	}
 
-    // Hapus alumni dari DB
-    err = repository.DeleteAlumni(db, id) 
-    if err != nil {
-        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-            "message": "Gagal menghapus alumni: " + err.Error(),
-            "success": false,
-        })
-    }
+	id := c.Params("id")
+	if _, err := primitive.ObjectIDFromHex(id); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "ID tidak valid",
+			"success": false,
+		})
+	}
 
-    username := c.Locals("username").(string) 
-    log.Printf("Admin %s menghapus mahasiswa ID %s", username, id)
+	if err := repository.DeleteAlumni(db, id); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Gagal menghapus alumni: " + err.Error(),
+			"success": false,
+		})
+	}
 
-    return c.Status(fiber.StatusOK).JSON(fiber.Map{
-        "message": "Alumni berhasil dihapus",
-        "success": true,
-    })
+	username, _ := c.Locals("username").(string)
+	log.Printf("User %s menghapus data alumni ID %s", username, id)
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Alumni berhasil dihapus",
+		"success": true,
+	})
 }
-
-// func GetAlumniBySalaryService(c *fiber.Ctx, db *mongo.Database) error {
-//     alumnis, err := repository.GetAlumniWithHighSalary(db)
-//     if err != nil {
-//         return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-//             "message": "Gagal mengambil data alumni: " + err.Error(),
-//             "success": false,
-//         })
-//     }
-
-//     return c.Status(fiber.StatusOK).JSON(fiber.Map{
-//         "message": "Berhasil mendapatkan data alumni dengan gaji > 20 juta",
-//         "success": true,
-//         "alumni": alumnis,
-//     })
-// }
-
-// func GetAlumniByYearService(c *fiber.Ctx, db *mongo.Database) error {
-//     alumnis, err := repository.GetAllAlumniByYear(db)
-//     if err != nil {
-//         return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-//             "message": "Gagal mengambil data alumni: " + err.Error(),
-//             "success": false,
-//         })
-//     }
-
-//     return c.Status(fiber.StatusOK).JSON(fiber.Map{
-//         "message": "Berhasil mendapatkan data alumni dengan tahun lulus 2023",
-//         "success": true,
-//         "alumni": alumnis,
-//     })
-// }
-
-//     func GetAlumniWithYearService(c *fiber.Ctx, db *mongo.Database) error {
-//         alumnis, err := repository.GetAlumniWithYear(db)
-//         if err != nil {
-//             return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-//                 "message": "Gagal mengambil data alumni: " + err.Error(),
-//                 "success": false,
-//             })
-//         }
-
-//         return c.Status(fiber.StatusOK).JSON(fiber.Map{
-//             "message": "Berhasil mendapatkan data alumni dengan tahun lulus yang sama dengan bekerjanya",
-//             "success": true,
-//             "alumni": alumnis,
-//         })
-//     }
-
-// func GetAlumniService(c *fiber.Ctx, db *mongo.Database) error {
-//     page, _ := strconv.Atoi(c.Query("page", "1"))
-//     limit, _ := strconv.Atoi(c.Query("limit", "10"))
-//     sortBy := c.Query("sortBy", "id")
-//     order := c.Query("order", "asc")
-//     search := c.Query("search", "")
-
-//     offset := (page - 1) * limit
-
-//     sortByWhitelist := map[string]bool{"id": true, "nama": true, "nim": true, "jurusan": true, "angkatan": true, "tahun_lulus": true}
-//     if !sortByWhitelist[sortBy] {
-//         sortBy = "id"
-//     }
-//     if strings.ToLower(order) != "desc" {
-//         order = "asc"
-//     }
-
-
-//     alumni, err := repository.GetAlumniRepo(db, search, sortBy, order, limit, offset)
-//      if err != nil {
-//         fmt.Println("Query error:", err) // untuk cek di console
-//          return c.Status(500).JSON(fiber.Map{
-//         "error": err.Error(), // kirim error asli ke client
-//     })
-//     }
-
-//     total, err := repository.CountAlumniRepo(db, search)
-//     if err != nil {
-//         return c.Status(500).JSON(fiber.Map{"error": "Failed to count alumni"})
-//     }
-
-//     response := model.AlumniResponse{
-//         Data: alumni,
-//         Meta: model.MetaInfo{
-//             Page:   page,
-//             Limit:  limit,
-//             Total:  total,
-//             Pages:  (total + limit - 1) / limit,
-//             SortBy: sortBy,
-//             Order:  order,
-//             Search: search,
-//         },
-//     }
-
-//     return c.JSON(response)
-// }
-
-
-
-
-
-

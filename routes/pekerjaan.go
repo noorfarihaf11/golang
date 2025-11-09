@@ -35,9 +35,9 @@ func JobRoutes(api fiber.Router, db *mongo.Database) {
 		return service.DeleteJobService(c, db)
 	})
 
-	job.Get("/filter/jobmoretwo/:id", func(c *fiber.Ctx) error {
-		return service.GetTotalJobAlumniService(c, db)
-	})
+	// job.Get("/filter/jobmoretwo/:id", func(c *fiber.Ctx) error {
+	// 	return service.GetTotalJobAlumniService(c, db)
+	// })
 
 	job.Get("/filter/trash", func(c *fiber.Ctx) error {
 		return service.GetTrashService(c, db)

@@ -3,7 +3,6 @@ package service
 import (
 	"fmt"
 	"log"
-	_ "os"
 	"strings"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -14,6 +13,17 @@ import (
 	"github.com/noorfarihaf11/clean-arc/utils"
 )
 
+// GetAllJobService godoc
+// @Summary Mendapatkan semua data pekerjaan
+// @Description Mengembalikan daftar semua pekerjaan alumni yang tersedia
+// @Tags PekerjaanAlumni
+// @Accept json
+// @Produce json
+// @Success 200 {object} model.PekerjaanAlumniResponse "Berhasil mengambil data pekerjaan alumni"
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /unair/pekerjaan [get]
 func GetAllJobService(c *fiber.Ctx, db *mongo.Database) error {
 	token := strings.TrimPrefix(c.Get("Authorization"), "Bearer ")
 	if token == "" {
@@ -34,6 +44,18 @@ func GetAllJobService(c *fiber.Ctx, db *mongo.Database) error {
 	return c.JSON(fiber.Map{"success": true, "data": jobs})
 }
 
+// GetJobByIDService godoc
+// @Summary Mendapatkan pekerjaan berdasarkan ID
+// @Description Mengambil data pekerjaan sesuai ID pekerjaan
+// @Tags PekerjaanAlumni
+// @Accept json
+// @Produce json
+// @Param id path string true "ID Pekerjaan"
+// @Success 200 {object} model.SinglePekerjaanResponse "Berhasil mengambil data pekerjaan alumni"
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /unair/pekerjaan/{id} [get]
 func GetJobByIDService(c *fiber.Ctx, db *mongo.Database) error {
 	token := strings.TrimPrefix(c.Get("Authorization"), "Bearer ")
 	if token == "" {
@@ -54,6 +76,18 @@ func GetJobByIDService(c *fiber.Ctx, db *mongo.Database) error {
 	return c.JSON(fiber.Map{"success": true, "data": job})
 }
 
+// GetJobsByAlumniIDService godoc
+// @Summary Mendapatkan pekerjaan berdasarkan ID alumni
+// @Description Mengembalikan semua pekerjaan yang dimiliki oleh seorang alumni
+// @Tags PekerjaanAlumni
+// @Accept json
+// @Produce json
+// @Param alumni_id path string true "ID Alumni"
+// @Success 200 {object} model.SinglePekerjaanResponse "Berhasil mengambil data pekerjaan alumni"
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /unair/pekerjaan/alumni/{alumni_id} [get]
 func GetJobsByAlumniIDService(c *fiber.Ctx, db *mongo.Database) error {
 	token := strings.TrimPrefix(c.Get("Authorization"), "Bearer ")
 	if token == "" {
@@ -75,6 +109,18 @@ func GetJobsByAlumniIDService(c *fiber.Ctx, db *mongo.Database) error {
 	return c.JSON(fiber.Map{"success": true, "data": jobs})
 }
 
+// CreateJobService godoc
+// @Summary Menambahkan pekerjaan baru
+// @Description Membuat entri pekerjaan baru untuk alumni
+// @Tags PekerjaanAlumni
+// @Accept json
+// @Produce json
+// @Param data body model.PekerjaanAlumni true "Data Pekerjaan"
+// @Success 200 {object} model.SinglePekerjaanResponse "Berhasil menambahkan data pekerjaan alumni"
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /unair/pekerjaan [post]
 func CreateJobService(c *fiber.Ctx, db *mongo.Database) error {
 	token := strings.TrimPrefix(c.Get("Authorization"), "Bearer ")
 	if token == "" {
@@ -97,6 +143,19 @@ func CreateJobService(c *fiber.Ctx, db *mongo.Database) error {
 	return c.Status(201).JSON(fiber.Map{"success": true, "message": "Berhasil tambah pekerjaan", "data": res})
 }
 
+// UpdateJobService godoc
+// @Summary Memperbarui data pekerjaan
+// @Description Mengubah data pekerjaan berdasarkan ID
+// @Tags PekerjaanAlumni
+// @Accept json
+// @Produce json
+// @Param id path string true "ID Pekerjaan"
+// @Param data body model.PekerjaanAlumni true "Data Pekerjaan Baru"
+// @Success 200 {object} model.SinglePekerjaanResponse "Berhasil mengupdate data pekerjaan alumni"
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /unair/pekerjaan/{id} [put]
 func UpdateJobService(c *fiber.Ctx, db *mongo.Database) error {
 	token := strings.TrimPrefix(c.Get("Authorization"), "Bearer ")
 	if token == "" {
@@ -119,25 +178,18 @@ func UpdateJobService(c *fiber.Ctx, db *mongo.Database) error {
 	return c.Status(200).JSON(fiber.Map{"success": true, "message": "Berhasil update pekerjaan", "data": res})
 }
 
-
-func GetTotalJobAlumniService(c *fiber.Ctx, db *mongo.Database) error {
-	alumniID := c.Params("id") // langsung string
-
-	results, err := repository.GetTotalJobAlumni(db, alumniID)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Alumni tidak lebih dari 1 pekerjaan " + err.Error(),
-			"success": false,
-		})
-	}
-
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": "Berhasil mendapatkan data alumni yang memiliki lebih dari 1 pekerjaan",
-		"success": true,
-		"alumni":  results,
-	})
-}
-
+// DeleteJobService godoc
+// @Summary Menghapus pekerjaan (soft delete)
+// @Description Menghapus data pekerjaan secara soft delete
+// @Tags PekerjaanAlumni
+// @Accept json
+// @Produce json
+// @Param id path string true "ID Pekerjaan"
+// @Success 200 {object} model.SinglePekerjaanResponse "Berhasil menghapus data pekerjaan alumni"
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /unair/pekerjaan/filter/trash/{id} [put]
 func DeleteJobService(c *fiber.Ctx, db *mongo.Database) error {
 	authHeader := c.Get("Authorization")
 	if authHeader == "" {
@@ -193,6 +245,17 @@ func DeleteJobService(c *fiber.Ctx, db *mongo.Database) error {
 	})
 }
 
+// GetTrashService godoc
+// @Summary Mendapatkan daftar data yang ada di trash
+// @Description Mengambil semua data pekerjaan yang sudah dihapus (soft delete) berdasarkan role pengguna
+// @Tags Trash
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} model.TrashResponse "Berhasil mengambil data trash"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 404 {object} map[string]interface{} "Tidak ada trash"
+// @Failure 500 {object} map[string]interface{} "Gagal mengambil trash"
+// @Router /unair/pekerjaan/filter/trash [get]
 func GetTrashService(c *fiber.Ctx, db *mongo.Database) error {
 
 	// Ambil user_id dan role dari JWT claims
@@ -245,7 +308,17 @@ func GetTrashService(c *fiber.Ctx, db *mongo.Database) error {
 	})
 }
 
-
+// RestoreService godoc
+// @Summary Mengembalikan data dari trash
+// @Description Melakukan restore terhadap pekerjaan berdasarkan ID
+// @Tags Trash
+// @Param id path string true "ID pekerjaan"
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} model.TrashResponse "Berhasil restore pekerjaan"
+// @Failure 403 {object} map[string]interface{} "Tidak diizinkan menghapus pekerjaan"
+// @Failure 500 {object} map[string]interface{} "Gagal restore data"
+// @Router /unair/pekerjaan/filter/restore/{id} [get]
 func RestoreService(c *fiber.Ctx, db *mongo.Database) error {
 
 	jobID := c.Params("id")
@@ -271,6 +344,17 @@ func RestoreService(c *fiber.Ctx, db *mongo.Database) error {
 	})
 }
 
+// HardDeleteService godoc
+// @Summary Menghapus data secara permanen
+// @Description Menghapus pekerjaan dari trash berdasarkan ID secara permanen
+// @Tags Trash
+// @Param id path string true "ID pekerjaan"
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]interface{} "Pekerjaan berhasil dihapus permanen"
+// @Failure 403 {object} map[string]interface{} "Tidak diizinkan menghapus pekerjaan"
+// @Failure 500 {object} map[string]interface{} "Gagal delete data"
+// @Router /unair/pekerjaan/filter/delete/{id} [delete]
 func HardDeleteService(c *fiber.Ctx, db *mongo.Database) error {
 
 	jobID := c.Params("id")
