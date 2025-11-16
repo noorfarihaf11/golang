@@ -1315,8 +1315,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/model.Alumni"
                 },
                 "message": {
-                    "type": "string",
-                    "example": "Alumni berhasil ditambahkan"
+                    "type": "string"
                 },
                 "success": {
                     "type": "boolean",
@@ -1328,8 +1327,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "message": {
-                    "type": "string",
-                    "example": "Pekerjaan berhasil ditambahkan"
+                    "type": "string"
                 },
                 "pekerjaan_alumni": {
                     "$ref": "#/definitions/model.PekerjaanAlumni"

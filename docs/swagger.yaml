@@ -164,7 +164,6 @@ definitions:
       alumni:
         $ref: '#/definitions/model.Alumni'
       message:
-        example: Alumni berhasil ditambahkan
         type: string
       success:
         example: true
@@ -173,7 +172,6 @@ definitions:
   model.SinglePekerjaanResponse:
     properties:
       message:
-        example: Pekerjaan berhasil ditambahkan
         type: string
       pekerjaan_alumni:
         $ref: '#/definitions/model.PekerjaanAlumni'

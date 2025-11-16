@@ -19,13 +19,13 @@ type AlumniResponse struct {
 }
 
 type SingleAlumniResponse struct {
-	Message string  `json:"message" example:"Alumni berhasil ditambahkan"`
+	Message string  `json:"message"`
 	Success bool    `json:"success" example:"true"`
 	Alumni  Alumni  `json:"alumni"`
 }
 
 type SinglePekerjaanResponse struct {
-	Message string  `json:"message" example:"Pekerjaan berhasil ditambahkan"`
+	Message string  `json:"message"`
 	Success bool    `json:"success" example:"true"`
 	PekerjaanAlumni  PekerjaanAlumni  `json:"pekerjaan_alumni"`
 }
